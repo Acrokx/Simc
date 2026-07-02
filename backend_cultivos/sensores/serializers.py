@@ -7,4 +7,5 @@ class SensorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Sensor
-        fields = ['id', 'id_sensor', 'tipo_sensor', 'ubicacion', 'estado', 'id_cultivo']
+        read_only_fields = ['id_sensor', 'id']
+        fields = ['id', 'id_sensor', 'codigo_sensor', 'tipo_sensor', 'ubicacion', 'estado', 'activo', 'frecuencia_minutos', 'rango_min', 'rango_max', 'id_cultivo']

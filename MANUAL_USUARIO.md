@@ -1,9 +1,9 @@
 # MANUAL DE USUARIO - SIMC
 
-## Sistema de Monitoreo de Cultivos y Control de Humedad
+## Sistema Inteligente de Monitoreo de Cultivos
 
-**Versión:** 1.0   \
-**Fecha:** Abril 2026   \
+**Versión:** 2.0 RC  
+**Fecha:** Julio 2026  
 **Proyecto:** SIMC
 
 ---
@@ -12,17 +12,20 @@
 
 ### 1.1 Acerca de SIMC
 
-SIMC es una aplicación móvil diseñada para que agricultores y administradores puedan gestionar fincas, cultivos, sistemas de riego, sensores de monitoreo y alertas de manera eficiente, permitiendo un mejor manejo de los recursos hídricos.
+SIMC es una aplicación web y móvil diseñada para que agricultores y administradores gestionen fincas, cultivos, sensores de monitoreo, alertas, riego y estadísticas en tiempo real, permitiendo un mejor manejo de los recursos hídricos y la toma de decisiones.
 
 ### 1.2 Requisitos del Sistema
 
-**Para dispositivo móvil:**
-- Android 6.0+ o iOS 13+
-- Expo Go instalado (disponible en Play Store o App Store)
+**Para navegador web:**
+- Chrome 90+ / Firefox 88+ / Edge 90+
 
-**Para el servidor (opcional - funciona con datos de demostración):**
-- Python 3.8+
-- Django 6.0
+**Para móvil:**
+- Android 6.0+ o iOS 13+
+- Expo Go instalado
+
+**Servidor backend:**
+- Python 3.11+
+- Django 6.0.3
 
 ---
 
@@ -30,16 +33,18 @@ SIMC es una aplicación móvil diseñada para que agricultores y administradores
 
 ### 2.1 Acceso a la Aplicación
 
-1. Abre la aplicación SIMC en tu dispositivo móvil
-2. En la pantalla de inicio, ingresa tu **correo electrónico** en el campo correspondiente
+1. Abre la aplicación en tu navegador o dispositivo móvil
+2. Ingresa tu **correo electrónico**
 3. Ingresa tu **contraseña**
-4. Presiona el botón **"Ingresar"**
+4. Presiona **"Iniciar sesión"**
 
 ### 2.2 Credenciales de Acceso
 
-Las credenciales las proporciona el administrador del sistema. Cada usuario debe tener:
-- Un correo electrónico válido
-- Una contraseña (mínimo 6 caracteres)
+| Email | Contraseña | Rol |
+|-------|------------|-----|
+| admin@simc.com | admin123 | Administrador |
+| juan@simc.com | juan123456 | Agricultor |
+| maria@simc.com | maria123456 | Agricultor |
 
 ### 2.3 Recuperar Contraseña
 
@@ -47,158 +52,144 @@ Si olvidas tu contraseña, contacta al administrador del sistema para que te asi
 
 ---
 
-## 3. PANTALLA PRINCIPAL (DASHBOARD)
+## 3. NAVEGACIÓN
 
-### 3.1 Estructura del Dashboard
-
-Al iniciar sesión, verás la pantalla principal que contiene:
-
-**Encabezado:**
-- Nombre de la aplicación: SIMC 🌱
-- Saludo personalizado con tu nombre
-- Tu rol (Administrador o Agricultor)
-- Botón para editar perfil
-- Botón para cerrar sesión
-
-**Estado General:**
-- Muestra el estado actual del sistema (Óptimo, Con advertencias, Con alertas)
-
-**Resumen del Sistema:**
-- Cantidad de fincas registradas
-- Cantidad de cultivos
-- Cantidad de sensores
-- Cantidad de riegos registrados
-
-**Métricas en Tiempo Real:**
-- Humedad (%): Muestra el nivel de humedad actual
-- Temperatura (°C): Muestra la temperatura ambiente
-- pH: Muestra el nivel de pH del suelo
-- Luz (lux): Muestra la intensidad luminosa
-
-**Gráficos (solo Administrador):**
-- Consumo de agua (últimos 7 días)
-- Alertas por prioridad
-
-### 3.2 Menú de Navegación
-
-En la parte inferior de la pantalla encontraras un menú con las siguientes opciones:
+### 3.1 Administrador
 
 | Icono | Función |
 |-------|---------|
-| 🏠 Inicio | Pantalla principal |
-| 🌾 Fincas | Gestión de fincas |
+| 🏠 Inicio | Dashboard administrativo |
 | 🌱 Cultivos | Gestión de cultivos |
-| 💧 Riegos | Registro de riegos |
 | 📡 Sensores | Gestión de sensores |
-| 📈 Mediciones | Ver mediciones |
-| 🔔 Alertas | Ver alertas |
-| 👥 Usuarios | Gestionar usuarios (solo admin) |
+| 🚨 Alertas | Gestión de alertas |
+| 👤 Perfil | Perfil y cerrar sesión |
+
+Accesos adicionales:
+- ☁️ **Configuración**: parámetros, alertas, API, correos, monitoreo, backups, IA
+- 📝 **Reportes**: PDF, Excel/CSV
+
+### 3.2 Agricultor
+
+| Icono | Función |
+|-------|---------|
+| 🏠 Inicio | Dashboard agrícola |
+| 🏡 Fincas | Mis fincas asignadas |
+| 🌱 Cultivos | Mis cultivos |
+| 📡 Sensores | Mis sensores |
+| 💧 Riego | Control de riego |
+| 📊 Estadísticas | Indicadores y gráficas |
+| 🚨 Alertas | Alertas activas e historial |
+| 👤 Perfil | Perfil y cerrar sesión |
 
 ---
 
-## 4. GESTIÓN DE FINCAS
+## 4. DASHBOARD
 
-### 4.1 Crear una Finca
+### 4.1 Dashboard Administrador
 
-1. Navega al menú **Fincas**
-2. Presiona el botón **"+"** o **"Nueva Finca"**
-3. Completa los siguientes datos:
-   - **Nombre de la finca:** Nombre identificador
-   - **Ubicación:** Dirección o ubicación geográfica
-   - **Tamaño (hectáreas):** Superficie de la finca
-   - **Descripción:** Información adicional (opcional)
-4. Presiona **"Guardar"**
+Muestra:
+- **KPIs principales**: usuarios, fincas, cultivos, sensores, alertas activas, alertas críticas, mediciones, humedad promedio
+- **Acciones rápidas**: crear finca, cultivo, sensor, agricultor, configuración
+- **Alertas recientes**: últimas alertas del sistema
 
-### 4.2 Ver Detalles de una Finca
+### 4.2 Dashboard Agricultor
 
-1. En la lista de fincas, presiona sobre la finca deseada
-2. Podrás ver todos los detalles y los cultivos asociados
-
-### 4.3 Editar una Finca
-
-1. Presiona sobre la finca a editar
-2. Modifica los campos deseados
-3. Presiona **"Guardar"**
-
-### 4.4 Eliminar una Finca
-
-1. Presiona sobre la finca a eliminar
-2. Presiona el botón de **eliminar** o **basura**
-3. Confirma la eliminación
+Muestra:
+- **Sensores en tiempo real**: humedad, temperatura, nivel de agua
+- **Resumen**: fincas, cultivos, sensores, alertas
+- **Estado de sensores**: indicador visual activos/inactivos
+- **Tendencia de humedad**: gráfico de barras
+- **Alertas recientes**
+- **Recomendaciones**
 
 ---
 
-## 5. GESTIÓN DE CULTIVOS
+## 5. GESTIÓN DE FINCAS
 
-### 5.1 Crear un Cultivo
+### 5.1 Ver Fincas (Administrador)
 
-1. Navega al menú **Cultivos**
-2. Presiona el botón **"+"** o **"Nuevo Cultivo"**
-3. Completa los siguientes datos:
-   - **Tipo de cultivo:** Nombre del cultivo (ej: Maíz, Café, etc.)
-   - **Fecha de siembra:** Selecciona la fecha
-   - **Finca:** Selecciona la finca donde se sembrará
-   - **Estado:** Estado actual del cultivo
-4. Presiona **"Guardar"**
+1. Navega a **Fincas** en el menú lateral
+2. Visualiza todas las fincas con:
+   - Nombre
+   - Ubicación
+   - Tamaño en hectáreas
+   - Estado
 
-### 5.2 Estados de Cultivo
+### 5.2 Mis Fincas (Agricultor)
 
-Los cultivos pueden tener los siguientes estados:
-- Siembra
-- Crecimiento
-- Producción
-- Cosecha
-- Descanso
+1. Navega a **Fincas** en el menú inferior
+2. Visualiza únicamente las fincas asignadas a tu usuario
+3. Toca **"Ver cultivos y sensores"** para expandir:
+   - Cultivos asociados
+   - Sensores instalados
 
-### 5.3 Gestionar Cultivos
+### 5.3 Detalle de Finca
 
-- **Ver:** Toca el cultivo para ver sus detalles
-- **Editar:** Modifica los datos del cultivo
-- **Eliminar:** Elimina el cultivo del sistema
+1. Toca una finca para ver su detalle
+2. Información disponible:
+   - Nombre, ubicación, área, estado
+   - Cultivos asociados (nombre, tipo, estado, fecha de siembra)
+   - Sensores instalados (código, tipo, ubicación, estado)
 
 ---
 
-## 6. GESTIÓN DE RIEGOS
+## 6. GESTIÓN DE CULTIVOS
 
-### 6.1 Registrar un Riego
+### 6.1 Ver Cultivos
 
-1. Navega al menú **Riegos**
-2. Presiona el botón **"+"** o **"Nuevo Riego"**
-3. Completa los datos:
-   - **Cultivo:** Selecciona el cultivo regado
-   - **Fecha de riego:** Fecha de la aplicación
-   - **Cantidad de agua:** Cantidad en litros
-4. Presiona **"Guardar"**
+1. Navega a **Cultivos**
+2. Visualiza todos los cultivos con:
+   - Nombre y tipo
+   - Estado
+   - Finca asociada
 
-### 6.2 Historial de Riegos
+### 6.2 Registrar Nuevo Cultivo (Administrador)
 
-En la pantalla principal de riegos puedes ver:
-- Lista de todos los riegos registrados
-- Fecha de cada riego
-- Cantidad de agua utilizada
-- Cultivo asociado
+1. Toca **"+ Nuevo Cultivo"**
+2. Completa:
+   - Nombre del cultivo
+   - Tipo de cultivo
+   - Área (m²)
+   - Finca asociada (selector)
+3. Presiona **"Crear Cultivo"**
+
+### 6.3 Mis Cultivos (Agricultor)
+
+1. Navega a **Cultivos** en el menú inferior
+2. Visualiza tus cultivos
+3. Toca un cultivo para ver:
+   - Información general
+   - Historial de crecimiento y monitoreo
+   - Sensores asociados
 
 ---
 
 ## 7. GESTIÓN DE SENSORES
 
-### 7.1 Crear un Sensor
+### 7.1 Ver Sensores
 
-1. Navega al menú **Sensores**
-2. Presiona el botón **"+"** o **"Nuevo Sensor"**
-3. Completa los datos:
-   - **Tipo de sensor:** Tipo de sensor (humedad, temperatura, pH, luz)
-   - **Ubicación:** Ubicación dentro del cultivo
-   - **Cultivo:** Selecciona el cultivo a monitorear
-   - **Estado:** Estado del sensor (Activo, Inactivo, Mantenimiento)
-4. Presiona **"Guardar"**
+1. Navega a **Sensores**
+2. Visualiza la lista con:
+   - Código o tipo de sensor
+   - Ubicación
+   - Estado
 
-### 7.2 Tipos de Sensores
+### 7.2 Detalle de Sensor (Agricultor)
 
-- **Humedad:** Mide el nivel de humedad del suelo
-- **Temperatura:** Mide la temperatura ambiente
-- **pH:** Mide el nivel de acidez del suelo
-- **Luz:** Mide la intensidad luminosa
+1. Toca un sensor para ver:
+   - Información general
+   - **Última lectura**: humedad registrada
+   - **Historial reciente**: últimas 10 mediciones
+
+### 7.3 Crear Sensor (Administrador)
+
+1. Toca **"Crear Sensor"**
+2. Completa:
+   - Código (opcional)
+   - Tipo de sensor
+   - Ubicación
+   - Cultivo asociado (selector)
+3. Presiona **"Crear Sensor"**
 
 ---
 
@@ -206,20 +197,18 @@ En la pantalla principal de riegos puedes ver:
 
 ### 8.1 Ver Mediciones
 
-1. Navega al menú **Mediciones**
-2. Podrás ver una lista de todas las mediciones registradas
-3. Cada medición muestra:
-   - Valor de humedad
+1. Navega a **Mediciones** (administrador)
+2. Visualiza el historial de mediciones de humedad
+3. Información mostrada:
+   - Valor de humedad (%)
+   - Sensor que generó la medición
    - Fecha y hora
-   - Sensor que realizó la medición
 
-### 8.2 Registrar una Medición
+### 8.2 Simular Mediciones
 
-1. En la pantalla de mediciones, presiona **"+"**
-2. Selecciona el **sensor** que realizará la medición
-3. Ingresa el **valor de humedad**
-4. La fecha se registrará automáticamente
-5. Presiona **"Guardar"**
+1. En la pantalla de Mediciones, toca **"⚡ Simular Mediciones"**
+2. El sistema genera registros aleatorios de humedad (15% - 90%)
+3. Se generan alertas automáticas cuando la humedad está fuera del rango (30% - 70%)
 
 ---
 
@@ -227,159 +216,196 @@ En la pantalla principal de riegos puedes ver:
 
 ### 9.1 Tipos de Alertas
 
-Las alertas se clasifican por **prioridad**:
+- 🟢 **Info**: humedad baja/alta dentro de rango moderado
+- 🟡 **Advertencia**: condiciones que requieren atención
+- 🔴 **Crítica**: humedad baja (< 30%) o alta (> 70%), temperatura elevada, sensor desconectado
 
-| Prioridad | Color | Significado |
-|-----------|-------|-------------|
-| Alta | 🔴 Rojo | Requiere atención inmediata |
-| Media | 🟡 Amarillo | Requiere atención pronto |
-| Baja | 🟢 Verde | Información general |
+### 9.2 Ver Alertas (Agricultor)
 
-### 9.2 Ver Alertas
+1. Navega a **Alertas**
+2. Usa las pestañas **Activas** / **Historial**
+3. Toca una alerta para marcarla como revisada
 
-1. Navega al menú **Alertas**
-2. Verás el listado de todas las alertas
-3. Las alertas no leídas se muestran con formato diferente
+### 9.3 Ver Alertas (Administrador)
 
-### 9.3 Marcar Alerta como Leída
-
-1. Toca sobre una alerta
-2. Presiona el botón para **marcar como leída**
-3. La alerta cambiará de estado
-
-### 9.4 Crear Alerta Manual
-
-1. En la pantalla de alertas, presiona **"+"**
-2. Completa:
-   - **Tipo de alerta:** Selecciona el tipo
-   - **Descripción:** Detalle de la alerta
-   - **Prioridad:** Nivel de prioridad
-3. Presiona **"Guardar"**
+1. Navega a **Alertas**
+2. Filtra por activas o historial
+3. Marca alertas como leídas o atendidas
 
 ---
 
-## 10. GESTIÓN DE USUARIOS (Solo Administrador)
+## 10. CONTROL DE RIEGO
 
-### 10.1 Ver Lista de Usuarios
+### 10.1 Activar Riego
 
-1. Navega al menú **Usuarios** (disponible solo para administradores)
-2. Verás la lista de todos los usuarios registrados
+1. Navega a **Riego**
+2. Toca **"Activar riego"**
+3. El sistema registra:
+   - Fecha y hora de inicio
+   - Cantidad de agua (L)
 
-### 10.2 Crear un Usuario
+### 10.2 Detener Riego
 
-1. Presiona el botón **"+"**
-2. Completa los datos:
-   - **Nombre:** Nombre del usuario
-   - **Apellido:** Apellido del usuario
-   - **Correo:** Correo electrónico único
-   - **Contraseña:** Contraseña inicial
-   - **Teléfono:** Número de contacto
-   - **Rol:** Administrador o Agricultor
-3. Presiona **"Guardar"**
+1. Toca **"Detener riego"**
+2. El sistema actualiza el registro con:
+   - Hora de finalización
+   - Cantidad final
 
-### 10.3 Editar Usuario
+### 10.3 Historial
 
-1. Toca sobre el usuario a modificar
-2. Cambia los datos necesarios
-3. Presiona **"Guardar"**
-
-### 10.4 Eliminar Usuario
-
-1. Toca sobre el usuario a eliminar
-2. Presiona el botón de eliminar
-3. Confirma la acción
+Visualiza todos los riegos realizados con:
+- Fecha
+- Cultivo
+- Cantidad de agua
+- Estado
 
 ---
 
-## 11. PERFIL DE USUARIO
+## 11. ESTADÍSTICAS
 
-### 11.1 Editar Perfil
+### 11.1 Indicadores
 
-1. En el dashboard, presiona el botón **"✏️ Editar"**
-2. Se abrirá un formulario donde puedes modificar:
+Visualiza:
+- **Humedad prom.**: promedio de humedad del suelo
+- **Temperatura**: promedio de temperatura
+- **Sensores activos**: cantidad y porcentaje
+
+### 11.2 Gráficas
+
+- **Humedad últimos días**: gráfico de barras de los últimos 7 días
+- **Tendencias**: comportamiento del cultivo
+
+### 11.3 Recomendaciones
+
+El sistema muestra recomendaciones basadas en los datos:
+- "Los niveles de humedad se mantienen estables..."
+- "Se recomienda verificar los sensores..."
+
+---
+
+## 12. REPORTES
+
+### 12.1 Generar Reporte PDF (Administrador)
+
+1. Navega a **Reportes** → **Exportar PDF**
+2. Toca **"Generar Reporte PDF"**
+3. El archivo `reporte_alertas.pdf` se descargará automáticamente
+
+### 12.2 Generar Reporte Excel/CSV (Administrador)
+
+1. Navega a **Reportes** → **Exportar Excel**
+2. Toca **"Generar Reporte Excel"**
+3. El archivo `reporte_alertas.csv` se descargará automáticamente
+
+### 12.3 Exportar Datos (Administrador)
+
+Desde **Configuración** → **Copias de Seguridad**:
+- Exportar alertas (CSV)
+- Exportar mediciones (CSV)
+- Exportar sensores (CSV)
+- Exportar cultivos (CSV)
+
+---
+
+## 13. PERFIL DE USUARIO
+
+### 13.1 Editar Perfil
+
+1. Navega a **Perfil**
+2. Toca **"Editar"**
+3. Modifica:
    - Nombre
    - Apellido
    - Teléfono
-   - Nueva contraseña (opcional)
-3. Presiona **"Guardar"**
+4. Presiona **"Guardar"**
 
-### 11.2 Cerrar Sesión
+### 13.2 Cerrar Sesión
 
-1. Presiona el botón **"🚪 Salir"** en el encabezado
+1. Toca **"Cerrar sesión"** en la pantalla de perfil
 2. Serás redirigido a la pantalla de inicio de sesión
 
 ---
 
-## 12. ROLES DE USUARIO
+## 14. CONFIGURACIÓN (ADMINISTRADOR)
 
-### 12.1 Administrador
+### 14.1 Parámetros Generales
 
-- ✅ Acceso completo a todas las funcionalidades
-- ✅ Gestión de usuarios (agricultores)
-- ✅ Ver gráficos y estadísticas en el dashboard
-- ✅ Crear, editar y eliminar cualquier registro
+1. Navega a **Configuración** → **Parámetros Generales**
+2. Visualiza variables del sistema
+3. Toca **"Editar"** para modificar un valor
+4. Presiona **"Guardar"**
 
-### 12.2 Agricultor
+### 14.2 Configuración de Alertas
 
-- ✅ Gestión de sus propias fincas, cultivos, riegos, sensores y mediciones
-- ✅ Ver alertas del sistema
-- ✅ Editar su propio perfil
+1. Navega a **Configuración** → **Configuración de Alertas**
+2. Visualiza reglas de umbral
+3. Toca **"Activar/Desactivar"** para habilitar o deshabilitar una regla
+
+### 14.3 Configuración de API
+
+1. Navega a **Configuración** → **Configuración de API**
+2. Visualiza logs de acceso a la API
+3. Toca **"Actualizar"** para refrescar
+
+### 14.4 Configuración de Correos
+
+1. Navega a **Configuración** → **Correos Electrónicos**
+2. Configura:
+   - Servidor SMTP
+   - Puerto
+   - Usuario SMTP
+   - Contraseña SMTP
+   - Correo remitente
+3. Presiona **"Guardar Configuración"**
+
+### 14.5 Monitoreo
+
+1. Navega a **Configuración** → **Monitoreo**
+2. Visualiza:
+   - **Estadísticas**: alertas, mediciones, usuarios, fincas, cultivos, sensores
+   - **Logs**: registros de actividad del sistema
+
+### 14.6 Backups
+
+1. Navega a **Configuración** → **Copias de Seguridad**
+2. Toca **"Generar Backup"**
+3. Exporta datos en CSV:
+   - Alertas
+   - Mediciones
+   - Sensores
+   - Cultivos
 
 ---
 
-## 13. SOLUCIÓN DE PROBLEMAS
+## 15. SOLUCIÓN DE PROBLEMAS
 
-### 13.1 No puedo iniciar sesión
+### 15.1 No puedo iniciar sesión
 
 - Verifica que el correo electrónico sea correcto
-- Verifica que la contraseña sea correcta (mínimo 6 caracteres)
-- Asegúrate de tener conexión a internet
-- Verifica que el servidor backend esté funcionando
+- Verifica que la contraseña sea correcta
+- Asegúrate de que el servidor backend esté funcionando en el puerto 8000
 
-### 13.2 No veo los gráficos en el dashboard
+### 15.2 No veo datos en la app
 
-- Los gráficos de consumo de agua y alertas solo son visibles para usuarios con rol Administrador
+- Verifica que existan registros en la base de datos
+- Usa las credenciales de administrador para crear datos de prueba
+- Revisa la consola del navegador para errores
 
-### 13.3 No puedo crear registros
+### 15.3 No puedo crear un cultivo/sensor
 
-- Verifica que todos los campos obligatorios estén completos
-- Algunos registros requieren tener datos previamente (ej: para crear un cultivo necesitas una finca)
-
-### 13.4 La aplicación no conecta con el servidor
-
-- Verifica que tu dispositivo esté en la misma red que el servidor
-- Verifica que la IP del servidor sea correcta en la configuración
-- Reinicia la aplicación
-
-### 13.5 Datos de demostración
-
-Si no hay conexión con el servidor, la aplicación mostrará datos de demostración (simulados) para que puedas explorar las funcionalidades.
+- Asegúrate de tener fincas/cultivos registrados previamente
+- Verifica que los campos obligatorios estén completos
+- Revisa que no haya errores de validación en el formulario
 
 ---
 
-## 14. GLOSARIO
+## 16. CONTACTO Y SOPORTE
 
-| Término | Descripción |
-|---------|-------------|
-| Dashboard | Pantalla principal con resumen y métricas |
-| Finca | Terreno agrícola registrado en el sistema |
-| Cultivo | Planta sembrada en una finca |
-| Riego | Aplicación de agua a un cultivo |
-| Sensor | Dispositivo que mide condiciones del ambiente |
-| Medición | Registro de un valor tomadas por un sensor |
-| Alerta | Notificación sobre condiciones anormales |
-| Prioridad | Nivel de importancia de una alerta |
+- **Aplicación:** SIMC - Sistema Inteligente de Monitoreo de Cultivos
+- **Tecnología:** React Native + Expo + Django REST Framework
+- **Base de datos:** SQLite / PostgreSQL
+- **Reportes:** PDF (ReportLab), CSV nativo
 
 ---
 
-## 15. CONTACTO Y SOPORTO
-
-Para reportar problemas o solicitar ayuda:
-
-- **Correo:** soporte@simc.com
-- **Teléfono:** [Número de contacto]
-- **sitio web:** www.simc.com
-
----
-
-© 2026 SIMC - Sistema de Monitoreo de Cultivos y Control de Humedad
+© 2026 SIMC - Sistema Inteligente de Monitoreo de Cultivos

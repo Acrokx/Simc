@@ -8,7 +8,10 @@ class Finca(models.Model):
     nombre_finca = models.CharField(max_length=100)
     ubicacion = models.CharField(max_length=150)
     tamaño_hectareas = models.DecimalField(max_digits=10, decimal_places=2)
+    tipo_cultivo = models.CharField(max_length=100, blank=True, default='')
+    estado = models.CharField(max_length=50, choices=[('activa', 'Activa'), ('inactiva', 'Inactiva')], default='activa')
     descripcion = models.TextField(blank=True, null=True)
+    imagen = models.TextField(blank=True, null=True)
     id_usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='fincas', db_column='id_usuario')
 
     class Meta:
@@ -21,16 +24,20 @@ class Finca(models.Model):
 class Cultivo(models.Model):
     """Modelo de Cultivo presente en cada finca"""
     id_cultivo = models.AutoField(primary_key=True, db_column='id_cultivo')
+    nombre_cultivo = models.CharField(max_length=100, default='')
     tipo_cultivo = models.CharField(max_length=100)
+    ubicacion = models.CharField(max_length=150, blank=True, default='')
+    tamaño_area = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     fecha_siembra = models.DateField()
     estado = models.CharField(max_length=50)
+    imagen = models.TextField(blank=True, null=True)
     id_finca = models.ForeignKey(Finca, on_delete=models.CASCADE, related_name='cultivos', db_column='id_finca')
 
     class Meta:
         db_table = 'cultivo'
 
     def __str__(self):
-        return f"{self.tipo_cultivo} ({self.estado})"
+        return self.nombre_cultivo or f"{self.tipo_cultivo} ({self.estado})"
 
 
 class HistorialRiego(models.Model):

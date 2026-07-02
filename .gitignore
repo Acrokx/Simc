@@ -25,6 +25,13 @@ yarn-error.log
 .expo/
 .expo-shared/
 
+# Local tooling / generated artifacts
+.kilo/
+*.tsbuildinfo
+*.coverage
+.coverage
+htmlcov/
+
 # OS
 .DS_Store
 Thumbs.db

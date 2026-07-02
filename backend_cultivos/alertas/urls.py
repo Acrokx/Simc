@@ -9,6 +9,7 @@ urlpatterns = [
     path('crear/', views.crear_alerta, name='crear_alerta'),
     path('no-leidas/', views.alertas_no_leidas, name='alertas_no_leidas'),
     path('marcar-leida/<int:pk>/', views.marcar_leida, name='marcar_leida'),
+    path('marcar-atendida/<int:pk>/', views.marcar_atendida, name='marcar_atendida'),
     path('crear-automatica/', views.crear_alerta_automatica, name='crear_alerta_automatica'),
     path('', include(router.urls)),
 ]

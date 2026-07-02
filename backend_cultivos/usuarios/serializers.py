@@ -5,11 +5,10 @@ from .models import Usuario
 
 class UsuarioSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='id_usuario', read_only=True)
-    num_fincas = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Usuario
-        fields = ['id', 'id_usuario', 'nombre', 'apellido', 'correo', 'telefono', 'contraseña', 'rol', 'fecha_registro', 'num_fincas']
+        fields = ['id', 'id_usuario', 'nombre', 'apellido', 'correo', 'telefono', 'foto_perfil', 'contraseña', 'rol', 'bloqueado', 'fecha_registro']
         extra_kwargs = {
             'contraseña': {'write_only': True},
             'fecha_registro': {'read_only': True}
@@ -19,6 +18,11 @@ class UsuarioSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         if 'id' in data:
             data['id_usuario'] = data['id']
+        try:
+            from cultivos.models import Finca
+            data['num_fincas'] = Finca.objects.filter(id_usuario=instance.id_usuario).count()
+        except Exception:
+            data['num_fincas'] = 0
         return data
 
     def create(self, validated_data):

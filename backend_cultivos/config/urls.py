@@ -7,7 +7,7 @@ from django.urls import path, include
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.routers import DefaultRouter
 
-from usuarios.views import login_usuario, registro_usuario, logout_usuario, editar_perfil
+from usuarios.views import login_usuario, registro_usuario, logout_usuario, editar_perfil, crear_usuario_publico
 from cultivos.views import dashboard_view
 from cultivos.views import FincaViewSet, CultivoViewSet, HistorialRiegoViewSet
 
@@ -23,7 +23,7 @@ urlpatterns = [
     # API endpoints
     path('api/login/', csrf_exempt(login_usuario), name='login'),
     path('api/logout/', csrf_exempt(logout_usuario), name='logout'),
-    path('api/registro/', csrf_exempt(registro_usuario), name='registro'),
+    path('api/registro/', csrf_exempt(crear_usuario_publico), name='registro'),
     path('api/dashboard/', dashboard_view, name='dashboard'),
     
     # Usuarios
@@ -40,4 +40,7 @@ urlpatterns = [
     
     # Alertas
     path('api/alertas/', include('alertas.urls')),
+
+    # Configuración inteligente
+    path('api/configuracion/', include('configuracion.urls')),
 ]

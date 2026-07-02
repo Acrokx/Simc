@@ -8,10 +8,12 @@ class Usuario(models.Model):
     correo = models.EmailField(max_length=100, unique=True)
     contraseña = models.CharField(max_length=255)
     telefono = models.CharField(max_length=20, blank=True, default='')
+    foto_perfil = models.TextField(blank=True, null=True)
     rol = models.CharField(max_length=20, choices=[
         ('Administrador', 'Administrador'),
         ('Agricultor', 'Agricultor'),
     ], default='Agricultor')
+    bloqueado = models.BooleanField(default=False)
     fecha_registro = models.DateField(auto_now_add=True)
 
     class Meta:

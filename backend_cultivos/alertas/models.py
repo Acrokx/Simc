@@ -1,5 +1,6 @@
 from django.db import models
 from mediciones.models import Medicion
+from sensores.models import Sensor
 
 
 class Alerta(models.Model):
@@ -10,7 +11,10 @@ class Alerta(models.Model):
     fecha_alerta = models.DateTimeField(auto_now_add=True)
     prioridad = models.CharField(max_length=20, default='media')
     leida = models.BooleanField(default=False)
+    atendida = models.BooleanField(default=False)
+    id_sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE, related_name='alertas', db_column='id_sensor', null=True, blank=True)
     id_medicion = models.ForeignKey(Medicion, on_delete=models.CASCADE, related_name='alertas', db_column='id_medicion', null=True, blank=True)
+    id_finca = models.ForeignKey('cultivos.Finca', on_delete=models.CASCADE, related_name='alertas', db_column='id_finca', null=True, blank=True)
 
     class Meta:
         db_table = 'alerta'
