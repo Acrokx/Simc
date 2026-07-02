@@ -9,7 +9,6 @@ class FincaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Finca
         fields = ['id', 'id_finca', 'nombre_finca', 'ubicacion', 'tamaño_hectareas', 'descripcion', 'id_usuario', 'nombre_usuario']
-        read_only_fields = ['id_usuario']
 
 
 class CultivoSerializer(serializers.ModelSerializer):

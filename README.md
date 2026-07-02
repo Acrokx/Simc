@@ -1,213 +1,97 @@
-# SIMC - Sistema de Monitoreo de Cultivos y control de Humedad.
+# SIMC - Sistema Inteligente de Monitoreo de Cultivos
 
-Sistema integral para la gestión y monitoreo de cultivos agrícolas, fincas, sensores y alertas en tiempo real.
+Cristhian Esneider Enciso Jimenez  
+Análisis y Desarrollo de Software - 3066478  
+Servicio Nacional de Aprendizaje S.E.N.A  
+Centro de Biotecnología Agropecuaria CBA  
+Mosquera – Cundinamarca
 
 ## Descripción
 
-SIMC es una aplicación móvil desarrollada con React Native (Expo) y un backend en Django que permite a agricultores y administradores gestionar fincas, cultivos, sistemas de riego, sensores de monitoreo y alertas de manera eficiente lo cual permitira un mejor manejo del los recursos hidricos.
+Sistema móvil para la gestión inteligente de cultivos, monitoreo de sensores, control de riegos y generación de alertas en tiempo real.
 
-### Características Principales
+## Tecnologías
 
-- **Gestión de Fincas**: Crear, editar y eliminar fincas con información detallada
-- **Control de Cultivos**: Seguimiento de tipos de cultivo, fechas de siembra y estados
-- **Sistema de Riegos**: Registro histórico de riegos por cultivo
-- **Monitoreo de Sensores**: Control de sensores asociados a cultivos
-- **Mediciones**: Registro y visualización de mediciones (humedad, temperatura, pH, luz)
-- **Alertas**: Sistema de notificaciones por prioridad (alta, media, baja)
-- **Gestión de Usuarios**: Administración de agricultores (solo administradores)
-- **Dashboard**: Resumen visual con gráficos y métricas en tiempo real
+**Backend:** Django + Django REST Framework  
+**Frontend:** React Native + Expo  
+**Base de datos:** SQLite (desarrollo)  
+**API:** RESTful con autenticación básica
 
-## 🏗️ Arquitectura
+## Estructura del Proyecto
 
 ```
 SIMC/
-├── backend_cultivos/          # Backend Django REST API
-│   ├── config/                # Configuración del proyecto
-│   ├── usuarios/              # App de usuarios
-│   ├── cultivos/              # App de fincas, cultivos y riegos
-│   ├── sensores/              # App de sensores
-│   ├── mediciones/            # App de mediciones
-│   └── alertas/               # App de alertas
-│
-└── MiAppTareas/               # Frontend React Native (Expo)
-    ├── app/                   # Páginas y rutas
-    │   ├── services/          # Servicios API
-    │   └── components/        # Componentes reutilizables
-    ├── components/            # Componentes UI
-    ├── constants/             # Configuración y temas
-    └── hooks/                 # Custom hooks
+├── MiAppTareas/          # Aplicación móvil (React Native)
+│   ├── app/              # Pantallas de la app
+│   │   ├── _layout.tsx   # Layout principal
+│   │   ├── index.tsx     # Pantalla de inicio
+│   │   ├── login.tsx     # Autenticación
+│   │   ├── home.tsx      # Panel principal
+│   │   ├── fincas.tsx    # Gestión de fincas
+│   │   ├── cultivos.tsx  # Gestión de cultivos
+│   │   ├── sensores.tsx  # Gestión de sensores
+│   │   ├── alertas.tsx   # Alertas del sistema
+│   │   ├── admin.tsx     # Panel de administración
+│   │   ├── api.ts        # Cliente HTTP
+│   │   └── theme.ts      # Tema de la app
+│   ├── app.json          # Configuración Expo
+│   └── package.json
+└── backend_cultivos/     # API Django
+    ├── usuarios/         # Gestión de usuarios
+    ├── cultivos/         # Fincas y cultivos
+    ├── sensores/         # Sensores IoT
+    ├── mediciones/       # Lecturas de sensores
+    ├── alertas/          # Sistema de alertas
+    ├── config/           # Configuración Django
+    ├── init_users.py     # Script inicial de usuarios
+    └── db.sqlite3        # Base de datos
 ```
 
-## Inicio Rápido
+## Instalación
 
-### Prerrequisitos
-
-- **Backend**: Python 3.8+, Django 6.0, SQLite
-- **Frontend**: Node.js 18+, npm/yarn, Expo Go (para móviles)
-
-### Instalación del Backend
+### Backend (Django)
 
 ```bash
-# Navegar al directorio del backend
 cd backend_cultivos
-
-# Crear entorno virtual (Windows)
-python -m venv venv
-venv\Scripts\activate
-
-# Instalar dependencias
-pip install django djangorestframework django-cors-headers
-
-# Aplicar migraciones
-python manage.py migrate
-
-# Iniciar servidor
-python manage.py runserver
+pip install -r requirements.txt
+python init_users.py
+python manage.py runserver 0.0.0.0:8000
 ```
 
-El backend estará disponible en: `http://localhost:8000`
-
-### Instalación del Frontend
+### Frontend (React Native)
 
 ```bash
-# Navegar al directorio del frontend
 cd MiAppTareas
-
-# Instalar dependencias
 npm install
-
-# Iniciar Expo (desarrollo)
-npx expo start
+# Configurar IP en app.json -> extra -> API_HOST
+npm run android
 ```
 
-Para ejecutar en dispositivo móvil:
-1. Escanea el código QR con Expo Go (Android/iOS)
-2. O usa un emulador de Android/iOS
+## Usuarios de Prueba
 
-##  Roles de Usuario
+| Email | Contraseña | Rol |
+|-------|------------|-----|
+| admin@simc.com | admin123 | Administrador |
+| juan@simc.com | juan123456 | Agricultor |
+| maria@simc.com | maria123456 | Agricultor |
 
-### Administrador
-- Acceso completo a todas las funcionalidades
-- Gestión de usuarios (agricultores)
-- Ver gráficos y estadísticas en el dashboard
-- Crear, editar y eliminar cualquier registro
+## API Endpoints
 
-### Agricultor
-- Gestión de sus propias fincas, cultivos, riegos, sensores y mediciones
-- Ver alertas del sistema
-- Editar su propio perfil
+- `POST /api/login/` - Iniciar sesión
+- `POST /api/registro/` - Registrar usuario
+- `GET /api/fincas/` - Listar fincas
+- `GET /api/cultivos/` - Listar cultivos
+- `GET /api/sensores/` - Listar sensores
+- `GET /api/alertas/` - Listar alertas
+- `GET /api/usuarios/agricultores/` - Listar agricultores
 
-##  Endpoints API
+## Historias de Usuario Implementadas
 
-### Autenticación
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | `/api/login/` | Iniciar sesión |
-| POST | `/api/logout/` | Cerrar sesión |
-| POST | `/api/registro/` | Registrar nuevo usuario |
-
-### Usuarios
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/usuarios/` | Listar usuarios |
-| GET | `/api/usuarios/perfil/` | Obtener perfil actual |
-| PATCH | `/api/usuarios/perfil/` | Actualizar perfil |
-
-### Fincas
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/fincas/` | Listar fincas |
-| POST | `/api/fincas/` | Crear finca |
-| GET | `/api/fincas/{id}/` | Obtener detalles |
-| PATCH | `/api/fincas/{id}/` | Actualizar finca |
-| DELETE | `/api/fincas/{id}/` | Eliminar finca |
-
-### Cultivos
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/cultivos/` | Listar cultivos |
-| POST | `/api/cultivos/` | Crear cultivo |
-| PATCH | `/api/cultivos/{id}/` | Actualizar cultivo |
-| DELETE | `/api/cultivos/{id}/` | Eliminar cultivo |
-
-### Riegos
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/riegos/` | Listar riegos |
-| POST | `/api/riegos/` | Registrar riego |
-| PATCH | `/api/riegos/{id}/` | Actualizar riego |
-| DELETE | `/api/riegos/{id}/` | Eliminar riego |
-
-### Sensores
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/sensores/` | Listar sensores |
-| POST | `/api/sensores/` | Crear sensor |
-| PATCH | `/api/sensores/{id}/` | Actualizar sensor |
-| DELETE | `/api/sensores/{id}/` | Eliminar sensor |
-
-### Mediciones
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/mediciones/` | Listar mediciones |
-| POST | `/api/mediciones/crear/` | Crear medición |
-| DELETE | `/api/mediciones/{id}/` | Eliminar medición |
-
-### Alertas
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/alertas/` | Listar alertas |
-| POST | `/api/alertas/crear/` | Crear alerta |
-| GET | `/api/alertas/no-leidas/` | Obtener alertas no leídas |
-| PATCH | `/api/alertas/{id}/` | Marcar como leída |
-| DELETE | `/api/alertas/{id}/` | Eliminar alerta |
-
-##  Configuración
-
-### Frontend - URL del API
-
-La aplicación frontend está configurada para conectarse al backend en:
-- **Desarrollo**: `http://172.31.0.183:8000/api`
-- La IP puede variar según la red local
-
-Para cambiar la URL del API, edita `MiAppTareas/app/services/api.ts`:
-
-```typescript
-// Línea 31: Cambiar la URL de fallback
-return 'http://TU_IP:8000/api';
-```
-
-### Backend - Configuración CORS
-
-El backend permite todas las origenes CORS para desarrollo. En producción, modifica `backend_cultivos/config/settings.py`:
-
-```python
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8081",
-    "http://tu-dominio.com",
-]
-```
-
-## 🔧 Tecnologías
-
-### Frontend
-- **Framework**: React Native con Expo
-- **Lenguaje**: TypeScript
-- **Navegación**: Expo Router
-- **HTTP Client**: Axios
-- **Estilos**: StyleSheet (React Native)
-
-### Backend
-- **Framework**: Django 6.0
-- **API**: Django REST Framework
-- **Base de datos**: SQLite (desarrollo)
-- **CORS**: django-cors-headers
-
-##  Licencia
-
-Este proyecto es para fines educativos y de desarrollo.
-
-##  Autores
-
-- Desarrollo: SIMC Team
-- Año: 2026
+- HU1: Registro de usuarios (Administrador)
+- HU2: Inicio de sesión (Usuario)
+- HU3: Registro de fincas (Agricultor)
+- HU4: Registro de cultivos (Agricultor)
+- HU5: Registro de sensores (Administrador)
+- HU6: Visualización de datos (Agricultor)
+- HU7: Generación de alertas (Usuario)
+- HU8: Generación de reportes (Administrador)

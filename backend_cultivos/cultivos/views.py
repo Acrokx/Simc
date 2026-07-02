@@ -1,3 +1,5 @@
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -36,7 +38,9 @@ def dashboard_view(request):
         return Response({'success': False, 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class FincaViewSet(viewsets.ModelViewSet):
+    """ViewSet para operaciones CRUD de Finca"""
     queryset = Finca.objects.all().order_by('-id_finca')
     serializer_class = FincaSerializer
 
@@ -44,7 +48,6 @@ class FincaViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         usuario_id = self.request.query_params.get('id_usuario')
         if usuario_id:
-            # Convertir a int para asegurar comparación correcta
             try:
                 queryset = queryset.filter(id_usuario=int(usuario_id))
             except (ValueError, TypeError):
@@ -53,7 +56,6 @@ class FincaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Guardar la finca asignando el usuario actual"""
-        # Intentar obtener el usuario del token de autenticación
         usuario = None
         if hasattr(self.request, 'user') and self.request.user.is_authenticated:
             from usuarios.models import Usuario
@@ -62,7 +64,6 @@ class FincaViewSet(viewsets.ModelViewSet):
             except Usuario.DoesNotExist:
                 pass
         
-        # Si no se encontró usuario del token, intentar desde los datos
         if not usuario:
             usuario_id = self.request.data.get('id_usuario')
             if usuario_id:
@@ -75,10 +76,10 @@ class FincaViewSet(viewsets.ModelViewSet):
         if usuario:
             serializer.save(id_usuario=usuario)
         else:
-            # Si no hay usuario, intentar guardar sin él (para pruebas)
             serializer.save()
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class CultivoViewSet(viewsets.ModelViewSet):
     queryset = Cultivo.objects.all().order_by('-id_cultivo')
     serializer_class = CultivoSerializer
@@ -91,6 +92,7 @@ class CultivoViewSet(viewsets.ModelViewSet):
         return queryset
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class HistorialRiegoViewSet(viewsets.ModelViewSet):
     queryset = HistorialRiego.objects.all().order_by('-fecha_riego')
     serializer_class = HistorialRiegoSerializer

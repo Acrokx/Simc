@@ -1,226 +1,358 @@
-import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, ScrollView } from "react-native";
-import { router } from "expo-router";
-import { sensorService, cultivoService, authService,fincaService } from "./services/api";
+import { useEffect, useState } from "react";
+import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import api from "./api";
 
-function MenuNavegacion({ rutaActual, esAdmin }: { rutaActual: string; esAdmin: boolean }) {
-  const menus = [
-    { ruta: "/dashboard", icono: "H", texto: "Inicio" },
-    { ruta: "/fincas", icono: "F", texto: "Fincas" },
-    { ruta: "/cultivos", icono: "C", texto: "Cultivos" },
-    { ruta: "/riegos", icono: "R", texto: "Riegos" },
-    { ruta: "/sensores", icono: "S", texto: "Sensores" },
-    { ruta: "/mediciones", icono: "M", texto: "Mide" },
-    { ruta: "/alertas", icono: "A", texto: "Alertas" },
-  ];
-  if (esAdmin) {
-    menus.push({ ruta: "/usuarios", icono: "U", texto: "Users" });
-  }
-  return (
-    <View style={styles.menu}>
-      {menus.map((menu) => (
-        <TouchableOpacity key={menu.ruta} style={[styles.menuItem, rutaActual === menu.ruta && styles.menuItemActivo]} onPress={() => router.push(menu.ruta as any)}>
-          <Text style={styles.menuIcono}>{menu.icono}</Text>
-          <Text style={[styles.menuTexto, rutaActual === menu.ruta && styles.menuTextoActivo]}>{menu.texto}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
+interface Cultivo {
+  id_cultivo: number;
+  tipo_cultivo: string;
+}
+
+interface Sensor {
+  id_sensor: number;
+  tipo_sensor: string;
+  ubicacion: string;
+  estado: string;
+  id_cultivo: number;
+}
+
+interface SensorMeasurement {
+  id: number;
+  sensor: string;
+  valor: number;
+  unidad: string;
+  fecha: string;
+  ubicacion: string;
 }
 
 export default function Sensores() {
-  const esAdmin = authService.isAdmin();
-  const [sensores, setSensores] = useState<any[]>([]);
-  const [cultivos, setCultivos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [mostrarForm, setMostrarForm] = useState(false);
-  const [editando, setEditando] = useState<any>(null);
-  const [idUsuario, setIdUsuario] = useState<number | null>(null);
-  
+  const router = useRouter();
+  const [sensores, setSensores] = useState<Sensor[]>([]);
+  const [cultivos, setCultivos] = useState<Cultivo[]>([]);
   const [tipo, setTipo] = useState("");
   const [ubicacion, setUbicacion] = useState("");
   const [estado, setEstado] = useState("Activo");
-  const [idCultivo, setIdCultivo] = useState<number | null>(null);
+  const [cultivoSeleccionado, setCultivoSeleccionado] = useState<number | null>(null);
+  const [mediciones, setMediciones] = useState<SensorMeasurement[]>([]);
 
   useEffect(() => {
-    const user = authService.getUser();
-    if (user?.id_usuario) {
-      setIdUsuario(user.id_usuario);
-    } else if (user?.id) {
-      setIdUsuario(user.id);
-    }
+    loadSensores();
+    loadCultivos();
   }, []);
 
-  useEffect(() => { 
-    if (idUsuario !== null) {
-      cargarDatos(); 
+  const loadSensores = async () => {
+    try {
+      const response = await api.get('/sensores/');
+      setSensores(response.data);
+    } catch (error) {
+      console.error('Error loading sensores:', error);
     }
-  }, [idUsuario]);
+  };
 
-  const cargarDatos = async () => {
+  const loadCultivos = async () => {
     try {
-      // Obtener las fincas del usuario
-      let fincasData;
-      if (esAdmin) {
-        fincasData = await fincaService.getAll();
-      } else if (idUsuario) {
-        fincasData = await fincaService.getByUsuario(idUsuario);
-      } else {
-        fincasData = [];
-      }
-      const fincasArray = Array.isArray(fincasData) ? fincasData : [];
-      const fincaIds = fincasArray.map((f: any) => f.id);
-      
-      // Obtener los cultivos de esas fincas
-      const todosCultivos = await cultivoService.getAll();
-      const cultivosFiltrados = Array.isArray(todosCultivos)
-        ? todosCultivos.filter((c: any) => fincaIds.includes(c.id_finca))
-        : [];
-      setCultivos(cultivosFiltrados);
-      
-      const cultivoIds = cultivosFiltrados.map((c: any) => c.id);
-      
-      // Cargar todos los sensores y filtrar por los cultivos del usuario
-      const todosSensores = await sensorService.getAll();
-      const sensoresFiltrados = Array.isArray(todosSensores)
-        ? todosSensores.filter((s: any) => cultivoIds.includes(s.id_cultivo))
-        : [];
-      setSensores(sensoresFiltrados);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+      const response = await api.get('/cultivos/');
+      setCultivos(response.data);
+    } catch (error) {
+      console.error('Error loading cultivos:', error);
+    }
   };
 
-  const seleccionarCultivo = (cultivoId: number) => {
-    setIdCultivo(cultivoId === idCultivo ? null : cultivoId);
-  };
+  const handleRegister = async () => {
+    if (!tipo.trim() || !ubicacion.trim() || !cultivoSeleccionado) {
+      Alert.alert("Error", "Tipo, ubicación y cultivo son requeridos.");
+      return;
+    }
 
-  const guardarSensor = async () => {
-    if (!tipo || !ubicacion || !idCultivo) { Alert.alert("Error", "Todos los campos son obligatorios"); return; }
     try {
-      const data = { tipo_sensor: tipo, nombre: tipo, ubicacion, estado, id_cultivo: idCultivo };
-      if (editando) {
-        await sensorService.update(editando.id, data);
-        Alert.alert("Éxito", "Sensor actualizado");
-      } else {
-        await sensorService.create(data);
-        Alert.alert("Éxito", "Sensor creado");
-      }
-      limpiarForm();
-      cargarDatos();
-    } catch (e) { Alert.alert("Error", "No se pudo guardar el sensor"); }
+      await api.post('/sensores/', {
+        tipo_sensor: tipo,
+        ubicacion,
+        estado,
+        id_cultivo: cultivoSeleccionado,
+      });
+      Alert.alert("Éxito", "Sensor registrado correctamente.");
+      setTipo("");
+      setUbicacion("");
+      setEstado("Activo");
+      setCultivoSeleccionado(null);
+      loadSensores();
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || 'Error desconocido';
+      Alert.alert("Error", `No se pudo registrar el sensor. ${message}`);
+      console.error('Sensor registration error:', message, error);
+    }
   };
 
-  const eliminarSensor = async (id: number) => {
-    Alert.alert("Confirmar", "¿Eliminar este sensor?", [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Eliminar", style: "destructive", onPress: async () => {
-        try {
-          await sensorService.delete(id);
-          cargarDatos();
-          Alert.alert("Éxito", "Sensor eliminado");
-        } catch (e) { Alert.alert("Error", "No se pudo eliminar"); }
-      }}
-    ]);
-  };
+  const simulateMediciones = () => {
+    const source = sensores.length > 0 ? sensores : [
+      { id_sensor: 1, tipo_sensor: 'Humedad del suelo', ubicacion: 'Simulado', estado: 'Activo', id_cultivo: 0 },
+      { id_sensor: 2, tipo_sensor: 'Temperatura ambiente', ubicacion: 'Simulado', estado: 'Activo', id_cultivo: 0 },
+      { id_sensor: 3, tipo_sensor: 'Luz', ubicacion: 'Simulado', estado: 'Activo', id_cultivo: 0 },
+    ];
 
-  const editarSensor = (item: any) => {
-    setEditando(item);
-    setTipo(item.tipo_sensor);
-    setUbicacion(item.ubicacion);
-    setEstado(item.estado);
-    setIdCultivo(item.id_cultivo);
-    setMostrarForm(true);
-  };
+    const values = source.map((sensor, index) => ({
+      id: index + 1,
+      sensor: sensor.tipo_sensor,
+      valor: parseFloat((Math.random() * 60 + 20).toFixed(1)),
+      unidad: sensor.tipo_sensor.toLowerCase().includes('temperatura') ? '°C' : sensor.tipo_sensor.toLowerCase().includes('humedad') ? '%' : 'lx',
+      fecha: new Date().toLocaleString(),
+      ubicacion: sensor.ubicacion,
+    }));
 
-  const limpiarForm = () => {
-    setTipo(""); setUbicacion(""); setEstado("Activo"); setIdCultivo(null);
-    setEditando(null);
-    setMostrarForm(false);
+    setMediciones(values);
+    Alert.alert('Simulación', 'Se generaron mediciones de sensores simuladas.');
   };
-
-  const renderItem = ({ item }: { item: any }) => (
-    <View style={styles.item}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.itemTitulo}>{item.tipo_sensor}</Text>
-        <Text style={styles.itemTexto}>Ubicacion: {item.ubicacion}</Text>
-        <Text style={styles.itemTexto}>Estado: {item.estado}</Text>
-      </View>
-      <View style={styles.botones}>
-        <TouchableOpacity style={styles.btnEditar} onPress={() => editarSensor(item)}><Text>E</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.btnEliminar} onPress={() => eliminarSensor(item.id)}><Text>X</Text></TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f3f4f6" }}>
-      <View style={styles.header}>
-        <Text style={styles.titulo}>Sensores</Text>
-        {esAdmin && (
-          <TouchableOpacity style={styles.btnAgregar} onPress={() => setMostrarForm(!mostrarForm)}>
-            <Text style={styles.btnAgregarText}>{mostrarForm ? "Cancelar" : "+ Nuevo"}</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F0FDFB" />
+      <ScrollView style={styles.container}>
+        <Text style={styles.heading}>Sensores</Text>
+        <Text style={styles.subtitle}>Registra sensores para monitorear tus cultivos.</Text>
 
-      {mostrarForm && (
         <View style={styles.form}>
-          <Text style={styles.formTitulo}>{editando ? "Editar Sensor" : "Nuevo Sensor"}</Text>
-          <TextInput style={styles.input} placeholder="Tipo de sensor" value={tipo} onChangeText={setTipo} />
-          <TextInput style={styles.input} placeholder="Ubicación" value={ubicacion} onChangeText={setUbicacion} />
-          <Text style={styles.label}>Cultivo:</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipContainer}>
-            {cultivos.map((cultivo: any) => (
-              <TouchableOpacity
-                key={cultivo.id}
-                style={[styles.chip, idCultivo === cultivo.id && styles.chipSeleccionado]}
-                onPress={() => setIdCultivo(cultivo.id)}
-              >
-                <Text style={[styles.chipText, idCultivo === cultivo.id && styles.chipTextSeleccionado]}>
-                  {cultivo.tipo_cultivo}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          <TextInput style={styles.input} placeholder="Estado (Activo/Inactivo)" value={estado} onChangeText={setEstado} />
-          <TouchableOpacity style={styles.boton} onPress={guardarSensor}>
-            <Text style={styles.botonTexto}>{editando ? "Actualizar" : "Crear Sensor"}</Text>
+          <Text style={styles.label}>Tipo de sensor</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: Humedad del suelo"
+              value={tipo}
+              onChangeText={setTipo}
+            />
+          </View>
+
+          <Text style={styles.label}>Ubicación</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: Sector Norte"
+              value={ubicacion}
+              onChangeText={setUbicacion}
+            />
+          </View>
+
+          <Text style={styles.label}>Estado</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: Activo"
+              value={estado}
+              onChangeText={setEstado}
+            />
+          </View>
+
+          <Text style={styles.label}>Seleccionar cultivo</Text>
+          {cultivos.map((cultivo) => (
+            <TouchableOpacity
+              key={cultivo.id_cultivo}
+              style={[
+                styles.cultivoOption,
+                cultivoSeleccionado === cultivo.id_cultivo && styles.cultivoSelected,
+              ]}
+              onPress={() => setCultivoSeleccionado(cultivo.id_cultivo)}
+            >
+              <Text style={styles.cultivoText}>{cultivo.tipo_cultivo}</Text>
+            </TouchableOpacity>
+          ))}
+
+          <TouchableOpacity style={styles.button} onPress={handleRegister}>
+            <Text style={styles.buttonText}>Registrar Sensor</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.simulateButton} onPress={simulateMediciones}>
+            <Text style={styles.simulateButtonText}>Simular Mediciones</Text>
           </TouchableOpacity>
         </View>
-      )}
 
-      <FlatList data={sensores} renderItem={renderItem} keyExtractor={(item) => item.id?.toString() || Math.random().toString()} contentContainerStyle={{ padding: 10 }} refreshing={loading} onRefresh={cargarDatos} />
-      <MenuNavegacion rutaActual="/sensores" esAdmin={esAdmin} />
-    </View>
+        <Text style={styles.sectionTitle}>Sensores Registrados</Text>
+        {sensores.length === 0 ? (
+          <Text style={styles.emptyText}>No hay sensores registrados aún.</Text>
+        ) : (
+          sensores.map((sensor) => (
+            <View key={sensor.id_sensor} style={styles.card}>
+              <Text style={styles.cardTitle}>{sensor.tipo_sensor}</Text>
+              <Text style={styles.cardText}>Ubicación: {sensor.ubicacion}</Text>
+              <Text style={styles.cardText}>Estado: {sensor.estado}</Text>
+            </View>
+          ))
+        )}
+
+        <Text style={styles.sectionTitle}>Mediciones Simuladas</Text>
+        {mediciones.length === 0 ? (
+          <Text style={styles.emptyText}>Pulsa el botón de simular mediciones para generar datos de sensores.</Text>
+        ) : (
+          mediciones.map((medicion) => (
+            <View key={medicion.id} style={styles.card}>
+              <Text style={styles.cardTitle}>{medicion.sensor}</Text>
+              <Text style={styles.cardText}>Valor: {medicion.valor} {medicion.unidad}</Text>
+              <Text style={styles.cardText}>Ubicación: {medicion.ubicacion}</Text>
+              <Text style={styles.cardText}>Fecha: {medicion.fecha}</Text>
+            </View>
+          ))
+        )}
+
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backButtonText}>Volver</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { backgroundColor: "#2563eb", padding: 20, paddingTop: 50 },
-  titulo: { fontSize: 22, color: "#fff", fontWeight: "bold", textAlign: "center" },
-  btnAgregar: { backgroundColor: "#22c55e", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, alignSelf: "center", marginTop: 10 },
-  btnAgregarText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
-  form: { backgroundColor: "#fff", margin: 10, padding: 15, borderRadius: 10 },
-  formTitulo: { fontSize: 16, fontWeight: "bold", marginBottom: 10, color: "#2563eb" },
-  label: { fontSize: 14, fontWeight: "bold", marginBottom: 5, color: "#333" },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 12, marginBottom: 10 },
-  chipContainer: { flexDirection: "row", marginBottom: 10 },
-  chip: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: "#e5e7eb", marginRight: 8 },
-  chipSeleccionado: { backgroundColor: "#2563eb" },
-  chipText: { fontSize: 14, color: "#333" },
-  chipTextSeleccionado: { color: "#fff" },
-  boton: { backgroundColor: "#2563eb", padding: 15, borderRadius: 8, alignItems: "center" },
-  botonTexto: { color: "#fff", fontWeight: "bold" },
-  item: { backgroundColor: "#fff", padding: 15, borderRadius: 10, marginBottom: 10, flexDirection: "row", alignItems: "center", elevation: 2 },
-  itemTitulo: { fontSize: 16, fontWeight: "bold", color: "#7c3aed" },
-  itemTexto: { fontSize: 13, color: "#666", marginTop: 3 },
-  botones: { flexDirection: "row" },
-  btnEditar: { padding: 10, marginRight: 5, backgroundColor: "#f59e0b", borderRadius: 8 },
-  btnEliminar: { padding: 10, backgroundColor: "#ef4444", borderRadius: 8 },
-  menu: { flexDirection: "row", backgroundColor: "#1e3a8a", paddingVertical: 12, paddingBottom: 25, justifyContent: "space-around" },
-  menuItem: { alignItems: "center", paddingHorizontal: 8 },
-  menuItemActivo: { backgroundColor: "#2563eb", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  menuIcono: { fontSize: 16, fontWeight: "bold", color: "#94a3b8" },
-  menuTexto: { fontSize: 10, color: "#94a3b8", marginTop: 2 },
-  menuTextoActivo: { color: "#fff", fontWeight: "bold" },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F0FDFB",
+  },
+  container: {
+    flex: 1,
+    padding: 24,
+  },
+  heading: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#0D7377",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#5A7D7C",
+    marginBottom: 24,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  form: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: "#0D7377",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "rgba(13, 115, 119, 0.1)",
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0D7377",
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    backgroundColor: "#F0FDFB",
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: "#E0F2F1",
+  },
+  input: {
+    backgroundColor: "transparent",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: "#0F172A",
+  },
+  cultivoOption: {
+    backgroundColor: "#F0FDFB",
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: "#E0F2F1",
+  },
+  cultivoSelected: {
+    backgroundColor: "#E0F7F5",
+    borderColor: "#0D7377",
+  },
+  cultivoText: {
+    fontSize: 16,
+    color: "#0F172A",
+  },
+  button: {
+    backgroundColor: "#0D7377",
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 8,
+    shadowColor: "#0D7377",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  simulateButton: {
+    backgroundColor: "#14A095",
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 12,
+    borderWidth: 2,
+    borderColor: "rgba(20, 160, 149, 0.3)",
+  },
+  simulateButtonText: {
+    color: "#0D7377",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0D7377",
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#0D7377",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(13, 115, 119, 0.08)",
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0D7377",
+    marginBottom: 8,
+  },
+  cardText: {
+    fontSize: 15,
+    color: "#5A7D7C",
+    lineHeight: 22,
+    marginBottom: 4,
+  },
+  backButton: {
+    backgroundColor: "#0D7377",
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  backButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
 });

@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password, check_password
+from django.db import transaction
 
 from .models import Usuario
 from .serializers import UsuarioSerializer
@@ -64,7 +65,6 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_usuario(request):
-    # Aceptar diferentes nombres de campo para compatibilidad
     correo = request.data.get('correo') or request.data.get('email') or request.data.get('username')
     contraseña = request.data.get('contraseña') or request.data.get('password') or request.data.get('pwd')
 
@@ -118,6 +118,11 @@ def registro_usuario(request):
 def agricultores_view(request):
     agricultores = Usuario.objects.filter(rol__iexact='Agricultor')
     data = UsuarioSerializer(agricultores, many=True).data
+    # Agregar número de fincas por agricultor
+    from cultivos.models import Finca
+    for item in data:
+        fincas_count = Finca.objects.filter(id_usuario=item['id_usuario']).count()
+        item['num_fincas'] = fincas_count
     return Response(data)
 
 
@@ -151,6 +156,7 @@ def editar_agricultor(request, pk):
     nombre = request.data.get('nombre')
     apellido = request.data.get('apellido')
     telefono = request.data.get('telefono')
+    contraseña = request.data.get('contraseña') or request.data.get('password')
     
     if nombre:
         usuario.nombre = nombre
@@ -158,6 +164,8 @@ def editar_agricultor(request, pk):
         usuario.apellido = apellido
     if telefono is not None:
         usuario.telefono = telefono
+    if contraseña:
+        usuario.contraseña = make_password(contraseña)
     
     usuario.save()
     return Response({'success': True, 'usuario': UsuarioSerializer(usuario).data})
@@ -193,3 +201,13 @@ def editar_perfil(request):
     usuario.save()
     return Response({'success': True, 'usuario': UsuarioSerializer(usuario).data})
 
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def administrador_check(request, pk):
+    """Verificar si un usuario es administrador"""
+    try:
+        usuario = Usuario.objects.get(pk=pk)
+        return Response({'is_admin': usuario.rol == 'Administrador'})
+    except Usuario.DoesNotExist:
+        return Response({'is_admin': False})

@@ -1,212 +1,295 @@
-import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, ScrollView } from "react-native";
-import { router } from "expo-router";
-import { cultivoService,fincaService, authService } from "./services/api";
+import { useEffect, useState } from "react";
+import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import api from "./api";
 
-function MenuNavegacion({ rutaActual, esAdmin }: { rutaActual: string; esAdmin: boolean }) {
-  const menus = [
-    { ruta: "/dashboard", icono: "H", texto: "Inicio" },
-    { ruta: "/fincas", icono: "F", texto: "Fincas" },
-    { ruta: "/cultivos", icono: "C", texto: "Cultivos" },
-    { ruta: "/riegos", icono: "R", texto: "Riegos" },
-    { ruta: "/sensores", icono: "S", texto: "Sensores" },
-    { ruta: "/mediciones", icono: "M", texto: "Mide" },
-    { ruta: "/alertas", icono: "A", texto: "Alertas" },
-  ];
-  if (esAdmin) {
-    menus.push({ ruta: "/usuarios", icono: "U", texto: "Users" });
-  }
-  return (
-    <View style={styles.menu}>
-      {menus.map((menu) => (
-        <TouchableOpacity key={menu.ruta} style={[styles.menuItem, rutaActual === menu.ruta && styles.menuItemActivo]} onPress={() => router.push(menu.ruta as any)}>
-          <Text style={styles.menuIcono}>{menu.icono}</Text>
-          <Text style={[styles.menuTexto, rutaActual === menu.ruta && styles.menuTextoActivo]}>{menu.texto}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
+interface Finca {
+  id_finca: number;
+  nombre_finca: string;
+}
+
+interface Cultivo {
+  id_cultivo: number;
+  tipo_cultivo: string;
+  fecha_siembra: string;
+  estado: string;
+  id_finca: number;
 }
 
 export default function Cultivos() {
-  const esAdmin = authService.isAdmin();
-  const [cultivos, setCultivos] = useState<any[]>([]);
-  const [fincas, setFincas] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [mostrarForm, setMostrarForm] = useState(false);
-  const [editando, setEditando] = useState<any>(null);
-  const [idUsuario, setIdUsuario] = useState<number | null>(null);
-  
+  const router = useRouter();
+  const [cultivos, setCultivos] = useState<Cultivo[]>([]);
+  const [fincas, setFincas] = useState<Finca[]>([]);
   const [tipo, setTipo] = useState("");
-  const [idFinca, setIdFinca] = useState<number | null>(null);
+  const [fecha, setFecha] = useState("");
   const [estado, setEstado] = useState("Activo");
+  const [fincaSeleccionada, setFincaSeleccionada] = useState<number | null>(null);
 
   useEffect(() => {
-    const user = authService.getUser();
-    if (user?.id_usuario) {
-      setIdUsuario(user.id_usuario);
-    } else if (user?.id) {
-      setIdUsuario(user.id);
-    }
+    loadCultivos();
+    loadFincas();
   }, []);
 
-  useEffect(() => { 
-    if (idUsuario !== null) {
-      cargarDatos(); 
+  const loadCultivos = async () => {
+    try {
+      const response = await api.get('/cultivos/');
+      setCultivos(response.data);
+    } catch (error) {
+      console.error('Error loading cultivos:', error);
     }
-  }, [idUsuario]);
+  };
 
-  const cargarDatos = async () => {
+  const loadFincas = async () => {
     try {
-      let fincasData;
-      if (esAdmin) {
-        fincasData = await fincaService.getAll();
-      } else if (idUsuario) {
-        fincasData = await fincaService.getByUsuario(idUsuario);
-      } else {
-        fincasData = [];
-      }
-      const fincasArray = Array.isArray(fincasData) ? fincasData : [];
-      setFincas(fincasArray);
-      
-      // Obtener los IDs de las fincas del usuario
-      const fincaIds = fincasArray.map((f: any) => f.id);
-      
-      // Cargar todos los cultivos y filtrar por las fincas del usuario
-      const todosCultivos = await cultivoService.getAll();
-      const cultivosFiltrados = Array.isArray(todosCultivos) 
-        ? todosCultivos.filter((c: any) => fincaIds.includes(c.id_finca))
-        : [];
-      setCultivos(cultivosFiltrados);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+      const response = await api.get('/fincas/');
+      setFincas(response.data);
+    } catch (error) {
+      console.error('Error loading fincas:', error);
+    }
   };
 
-  const guardarCultivo = async () => {
-    if (!tipo || !idFinca) { Alert.alert("Error", "Todos los campos son obligatorios"); return; }
+  const handleRegister = async () => {
+    if (!tipo.trim() || !fecha.trim() || !fincaSeleccionada) {
+      Alert.alert("Error", "Tipo, fecha y finca son requeridos.");
+      return;
+    }
+
     try {
-      const data = { tipo_cultivo: tipo, fecha_siembra: new Date().toISOString().split('T')[0], estado, id_finca: idFinca };
-      if (editando) {
-        await cultivoService.update(editando.id, data);
-        Alert.alert("Éxito", "Cultivo actualizado");
-      } else {
-        await cultivoService.create(data);
-        Alert.alert("Éxito", "Cultivo creado");
-      }
-      limpiarForm();
-      cargarDatos();
-    } catch (e) { Alert.alert("Error", "No se pudo guardar el cultivo"); }
+      await api.post('/cultivos/', {
+        tipo_cultivo: tipo,
+        fecha_siembra: fecha,
+        estado,
+        id_finca: fincaSeleccionada,
+      });
+      Alert.alert("Éxito", "Cultivo registrado correctamente.");
+      setTipo("");
+      setFecha("");
+      setEstado("Activo");
+      setFincaSeleccionada(null);
+      loadCultivos();
+    } catch (error) {
+      Alert.alert("Error", "No se pudo registrar el cultivo.");
+      console.error(error);
+    }
   };
-
-  const eliminarCultivo = async (id: number) => {
-    Alert.alert("Confirmar", "¿Eliminar este cultivo?", [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Eliminar", style: "destructive", onPress: async () => {
-        try {
-          await cultivoService.delete(id);
-          cargarDatos();
-          Alert.alert("Éxito", "Cultivo eliminado");
-        } catch (e) { Alert.alert("Error", "No se pudo eliminar"); }
-      }}
-    ]);
-  };
-
-  const editarCultivo = (item: any) => {
-    setEditando(item);
-    setTipo(item.tipo_cultivo);
-    setIdFinca(item.id_finca);
-    setEstado(item.estado);
-    setMostrarForm(true);
-  };
-
-  const limpiarForm = () => {
-    setTipo(""); setIdFinca(null); setEstado("Activo");
-    setEditando(null);
-    setMostrarForm(false);
-  };
-
-  const renderItem = ({ item }: { item: any }) => (
-    <View style={styles.item}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.itemTitulo}>{item.tipo_cultivo}</Text>
-        <Text style={styles.itemTexto}>Siembra: {item.fecha_siembra}</Text>
-        <Text style={styles.itemTexto}>Estado: {item.estado}</Text>
-      </View>
-      <View style={styles.botones}>
-        <TouchableOpacity style={styles.btnEditar} onPress={() => editarCultivo(item)}><Text>E</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.btnEliminar} onPress={() => eliminarCultivo(item.id)}><Text>X</Text></TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f3f4f6" }}>
-      <View style={styles.header}>
-        <Text style={styles.titulo}>Cultivos</Text>
-        {esAdmin && (
-          <TouchableOpacity style={styles.btnAgregar} onPress={() => setMostrarForm(!mostrarForm)}>
-            <Text style={styles.btnAgregarText}>{mostrarForm ? "Cancelar" : "+ Nuevo"}</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F0FDFB" />
+      <ScrollView style={styles.container}>
+        <Text style={styles.heading}>Cultivos</Text>
+        <Text style={styles.subtitle}>Registra y consulta cultivos en tus fincas.</Text>
 
-      {mostrarForm && (
         <View style={styles.form}>
-          <Text style={styles.formTitulo}>{editando ? "Editar Cultivo" : "Nuevo Cultivo"}</Text>
-          <TextInput style={styles.input} placeholder="Tipo de cultivo" value={tipo} onChangeText={setTipo} />
-          <Text style={styles.label}>Seleccionar Finca:</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipContainer}>
-            {fincas.map((finca: any) => (
-              <TouchableOpacity
-                key={finca.id}
-                style={[styles.chip, idFinca === finca.id && styles.chipSeleccionado]}
-                onPress={() => setIdFinca(finca.id)}
-              >
-                <Text style={[styles.chipText, idFinca === finca.id && styles.chipTextSeleccionado]}>
-                  {finca.nombre_finca}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          <TextInput style={styles.input} placeholder="Estado (Activo/Inactivo)" value={estado} onChangeText={setEstado} />
-          <TouchableOpacity style={styles.boton} onPress={guardarCultivo}>
-            <Text style={styles.botonTexto}>{editando ? "Actualizar" : "Crear Cultivo"}</Text>
+          <Text style={styles.label}>Tipo de cultivo</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: Maíz, Tomate"
+              value={tipo}
+              onChangeText={setTipo}
+            />
+          </View>
+
+          <Text style={styles.label}>Fecha de siembra (YYYY-MM-DD)</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: 2026-05-06"
+              value={fecha}
+              onChangeText={setFecha}
+            />
+          </View>
+
+          <Text style={styles.label}>Estado</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: Activo"
+              value={estado}
+              onChangeText={setEstado}
+            />
+          </View>
+
+          <Text style={styles.label}>Seleccionar finca</Text>
+          {fincas.map((finca) => (
+            <TouchableOpacity
+              key={finca.id_finca}
+              style={[
+                styles.fincaOption,
+                fincaSeleccionada === finca.id_finca && styles.fincaSelected,
+              ]}
+              onPress={() => setFincaSeleccionada(finca.id_finca)}
+            >
+              <Text style={styles.fincaText}>{finca.nombre_finca}</Text>
+            </TouchableOpacity>
+          ))}
+
+          <TouchableOpacity style={styles.button} onPress={handleRegister}>
+            <Text style={styles.buttonText}>Registrar Cultivo</Text>
           </TouchableOpacity>
         </View>
-      )}
 
-      <FlatList data={cultivos} renderItem={renderItem} keyExtractor={(item) => item.id?.toString() || Math.random().toString()} contentContainerStyle={{ padding: 10 }} refreshing={loading} onRefresh={cargarDatos} />
-      <MenuNavegacion rutaActual="/cultivos" esAdmin={esAdmin} />
-    </View>
+        <Text style={styles.sectionTitle}>Cultivos Registrados</Text>
+        {cultivos.length === 0 ? (
+          <Text style={styles.emptyText}>No hay cultivos registrados aún.</Text>
+        ) : (
+          cultivos.map((cultivo) => (
+            <View key={cultivo.id_cultivo} style={styles.card}>
+              <Text style={styles.cardTitle}>{cultivo.tipo_cultivo}</Text>
+              <Text style={styles.cardText}>Fecha siembra: {cultivo.fecha_siembra}</Text>
+              <Text style={styles.cardText}>Estado: {cultivo.estado}</Text>
+            </View>
+          ))
+        )}
+
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backButtonText}>Volver</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { backgroundColor: "#2563eb", padding: 20, paddingTop: 50 },
-  titulo: { fontSize: 22, color: "#fff", fontWeight: "bold", textAlign: "center" },
-  btnAgregar: { backgroundColor: "#22c55e", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, alignSelf: "center", marginTop: 10 },
-  btnAgregarText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
-  form: { backgroundColor: "#fff", margin: 10, padding: 15, borderRadius: 10 },
-  formTitulo: { fontSize: 16, fontWeight: "bold", marginBottom: 10, color: "#2563eb" },
-  label: { fontSize: 14, fontWeight: "bold", marginBottom: 5, color: "#333" },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 12, marginBottom: 10 },
-  chipContainer: { flexDirection: "row", marginBottom: 10 },
-  chip: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: "#e5e7eb", marginRight: 8 },
-  chipSeleccionado: { backgroundColor: "#22c55e" },
-  chipText: { fontSize: 14, color: "#333" },
-  chipTextSeleccionado: { color: "#fff" },
-  boton: { backgroundColor: "#2563eb", padding: 15, borderRadius: 8, alignItems: "center" },
-  botonTexto: { color: "#fff", fontWeight: "bold" },
-  item: { backgroundColor: "#fff", padding: 15, borderRadius: 10, marginBottom: 10, flexDirection: "row", alignItems: "center", elevation: 2 },
-  itemTitulo: { fontSize: 16, fontWeight: "bold", color: "#059669" },
-  itemTexto: { fontSize: 13, color: "#666", marginTop: 3 },
-  botones: { flexDirection: "row" },
-  btnEditar: { padding: 10, marginRight: 5, backgroundColor: "#f59e0b", borderRadius: 8 },
-  btnEliminar: { padding: 10, backgroundColor: "#ef4444", borderRadius: 8 },
-  menu: { flexDirection: "row", backgroundColor: "#1e3a8a", paddingVertical: 12, paddingBottom: 25, justifyContent: "space-around" },
-  menuItem: { alignItems: "center", paddingHorizontal: 8 },
-  menuItemActivo: { backgroundColor: "#2563eb", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  menuIcono: { fontSize: 16, fontWeight: "bold", color: "#94a3b8" },
-  menuTexto: { fontSize: 10, color: "#94a3b8", marginTop: 2 },
-  menuTextoActivo: { color: "#fff", fontWeight: "bold" },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F0FDFB",
+  },
+  container: {
+    flex: 1,
+    padding: 24,
+  },
+  heading: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#0D7377",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#5A7D7C",
+    marginBottom: 24,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  form: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: "#0D7377",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "rgba(13, 115, 119, 0.1)",
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0D7377",
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    backgroundColor: "#F0FDFB",
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: "#E0F2F1",
+  },
+  input: {
+    backgroundColor: "transparent",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: "#0F172A",
+  },
+  fincaOption: {
+    backgroundColor: "#F0FDFB",
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: "#E0F2F1",
+  },
+  fincaSelected: {
+    backgroundColor: "#E0F7F5",
+    borderColor: "#0D7377",
+  },
+  fincaText: {
+    fontSize: 16,
+    color: "#0F172A",
+  },
+  button: {
+    backgroundColor: "#0D7377",
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 8,
+    shadowColor: "#0D7377",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0D7377",
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#0D7377",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(13, 115, 119, 0.08)",
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0D7377",
+    marginBottom: 8,
+  },
+  cardText: {
+    fontSize: 15,
+    color: "#5A7D7C",
+    lineHeight: 22,
+    marginBottom: 4,
+  },
+  backButton: {
+    backgroundColor: "#0D7377",
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  backButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
 });

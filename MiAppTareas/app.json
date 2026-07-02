@@ -1,13 +1,16 @@
 {
   "expo": {
-    "name": "MiAppTareas",
-    "slug": "MiAppTareas",
+    "name": "SIMC",
+    "slug": "simc",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "miapptareas",
+    "scheme": "simc",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "extra": {
+      "API_HOST": "172.31.0.180"
+    },
     "ios": {
       "supportsTablet": true
     },

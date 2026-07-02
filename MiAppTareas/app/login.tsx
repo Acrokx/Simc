@@ -1,361 +1,241 @@
 import { useState } from "react";
-import { router } from "expo-router";
-import {
-  Text,
-  TextInput,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  SafeAreaView,
-  StatusBar,
-  ActivityIndicator,
-} from "react-native";
-import { authService } from "./services/api";
+import { Alert, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import api from "./api";
 
 export default function Login() {
-  const [form, setForm] = useState({
-    username: "",
-    password: "",
-  });
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [ui, setUI] = useState({
-    loading: false,
-    showPassword: false,
-    error: "",
-  });
-
-  /* ================= FUNCIONES ================= */
-
-  const handleChange = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (ui.error) setUI((prev) => ({ ...prev, error: "" }));
-  };
-
-  const validarFormulario = () => {
-    if (!form.username.trim() || !form.password.trim()) {
-      return "Todos los campos son obligatorios";
-    }
-
-    // Validación de contraseña más robusta
-    if (form.password.length < 6) {
-      return "La contraseña debe tener al menos 6 caracteres";
-    }
-
-    // Verificar que el username parezca un email válido
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(form.username.trim())) {
-      return "Ingrese un correo electrónico válido";
-    }
-
-    return "";
+  const validateEmail = (value: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(value.trim());
   };
 
   const handleLogin = async () => {
-    const errorMsg = validarFormulario();
-    if (errorMsg) {
-      setUI((prev) => ({ ...prev, error: errorMsg }));
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
+      Alert.alert("Error", "Por favor ingresa correo y contraseña.");
       return;
     }
 
-    setUI((prev) => ({ ...prev, loading: true, error: "" }));
+    if (!validateEmail(trimmedEmail)) {
+      Alert.alert("Error", "Formato de correo inválido.");
+      return;
+    }
 
+    if (trimmedPassword.length < 6) {
+      Alert.alert("Error", "La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      const response = await authService.login(
-        form.username.trim(),
-        form.password
-      );
+      const response = await api.post("/login/", {
+        correo: trimmedEmail.toLowerCase(),
+        contraseña: trimmedPassword,
+      }, {
+        timeout: 10000,
+      });
 
-      if (response?.success) {
-        router.replace("/dashboard");
+      if (response.data?.success) {
+        router.replace("/home");
       } else {
-        setUI((prev) => ({
-          ...prev,
-          error: response?.message || "Credenciales incorrectas",
-        }));
+        Alert.alert("Error", response.data?.message || "Credenciales incorrectas.");
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Error login:", err);
-      setUI((prev) => ({
-        ...prev,
-        error: "No se pudo conectar con el servidor",
-      }));
-    } finally {
-      setUI((prev) => ({ ...prev, loading: false }));
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || 'Error de conexión al servidor.';
+      Alert.alert("Error de Conexión", message);
+      console.error('Login error:', message, error);
+      setLoading(false);
     }
   };
 
-  const togglePassword = () => {
-    setUI((prev) => ({
-      ...prev,
-      showPassword: !prev.showPassword,
-    }));
-  };
-
-  /* ================= UI ================= */
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#eff6ff" />
-
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      <StatusBar barStyle="dark-content" backgroundColor="#F0FDFB" />
+      <ImageBackground 
+        source={{ uri: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&h=1080&fit=crop' }} 
+        style={styles.background}
+        resizeMode="cover"
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Header />
+        <View style={styles.overlay}>
+          <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <View style={styles.card}>
+              <Text style={styles.heading}>Bienvenido</Text>
+              <Text style={styles.subtitle}>Inicia sesión en SIMC</Text>
 
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Iniciar sesión</Text>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Correo electrónico</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="correo@ejemplo.com"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    value={email}
+                    onChangeText={setEmail}
+                    editable={!loading}
+                  />
+                </View>
+              </View>
 
-            {ui.error ? <ErrorMessage message={ui.error} /> : null}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Contraseña</Text>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="********"
+                    placeholderTextColor="#9CA3AF"
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={setPassword}
+                    editable={!loading}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setShowPassword(!showPassword)}
+                    disabled={loading}
+                  >
+                    <Text style={styles.eyeText}>{showPassword ? "👁️" : "👁️‍🗨️"}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-            {/* EMAIL */}
-            <InputField
-            label="Correo electrónico"
-            placeholder="ejemplo@correo.com"
-            value={form.username}
-            onChangeText={(text: string) => handleChange("username", text)}
-            keyboardType="email-address"
-            />
-
-            {/* PASSWORD */}
-            <PasswordField
-              value={form.password}
-              showPassword={ui.showPassword}
-              onChange={(text) => handleChange("password", text)}
-              onToggle={togglePassword}
-            />
-
-            {/* BOTÓN */}
-            <TouchableOpacity
-              style={[
-                styles.button,
-                ui.loading && styles.buttonDisabled,
-              ]}
-              onPress={handleLogin}
-              disabled={ui.loading}
-              activeOpacity={0.8}
-            >
-              {ui.loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Ingresar</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.footer}>© 2026 SIMC</Text>
-        </ScrollView>
-      </KeyboardAvoidingView>
+              <TouchableOpacity
+                style={[styles.button, loading && styles.buttonDisabled]}
+                onPress={handleLogin}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.buttonText}>{loading ? "Iniciando..." : "Iniciar Sesión"}</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </ImageBackground>
     </SafeAreaView>
   );
 }
 
-/* ================= COMPONENTES ================= */
-
-function Header() {
-  return (
-    <View style={styles.header}>
-      <Text style={styles.title}>Sistema de Cultivos</Text>
-      <Text style={styles.subtitle}>
-        Accede a tu plataforma de monitoreo
-      </Text>
-    </View>
-  );
-}
-
-function InputField({
-  label,
-  ...props
-}: {
-  label: string;
-  [key: string]: any;
-}) {
-  return (
-    <>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={styles.input}
-        placeholderTextColor="#9ca3af"
-        autoCapitalize="none"
-        {...props}
-      />
-    </>
-  );
-}
-
-function PasswordField({
-  value,
-  showPassword,
-  onChange,
-  onToggle,
-}: {
-  value: string;
-  showPassword: boolean;
-  onChange: (text: string) => void;
-  onToggle: () => void;
-}) {
-  return (
-    <>
-      <Text style={styles.label}>Contraseña</Text>
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={styles.passwordInput}
-          placeholder="••••••••"
-          placeholderTextColor="#9ca3af"
-          secureTextEntry={!showPassword}
-          value={value}
-          onChangeText={onChange}
-        />
-        <TouchableOpacity onPress={onToggle}>
-          <Text style={styles.eye}>
-            {showPassword ? "Ocultar" : "Ver"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </>
-  );
-}
-
-function ErrorMessage({ message }: { message: string }) {
-  return (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorText}>{message}</Text>
-    </View>
-  );
-}
-
-/* ================= ESTILOS ================= */
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#eff6ff",
+    backgroundColor: "#F0FDFB",
   },
-
+  background: {
+    flex: 1,
+    width: "100%",
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(240, 253, 251, 0.88)",
+  },
   container: {
     flex: 1,
-  },
-
-  scrollContent: {
-    flexGrow: 1,
     justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
+    padding: 24,
   },
-
-  header: {
-    marginBottom: 25,
-    alignItems: "center",
-  },
-
-  title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#2563eb",
-  },
-
-  subtitle: {
-    fontSize: 13,
-    color: "#3b82f6",
-    marginTop: 4,
-  },
-
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
-    elevation: 4,
-    width: "100%",
-    maxWidth: 400,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 32,
+    shadowColor: "#0D7377",
+    shadowOffset: { width: 0, height: 25 },
+    shadowOpacity: 0.2,
+    shadowRadius: 35,
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: "rgba(13, 115, 119, 0.1)",
   },
-
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 16,
+  heading: {
+    fontSize: 34,
+    fontWeight: "800",
+    color: "#0D7377",
+    marginBottom: 8,
     textAlign: "center",
   },
-
+  subtitle: {
+    fontSize: 16,
+    color: "#5A7D7C",
+    marginBottom: 32,
+    textAlign: "center",
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
   label: {
-    fontSize: 13,
-    color: "#374151",
-    marginBottom: 6,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0D7377",
+    marginBottom: 8,
   },
-
+  inputWrapper: {
+    backgroundColor: "#F0FDFB",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#E0F2F1",
+  },
   input: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    padding: 12,
-    backgroundColor: "#f9fafb",
-    marginBottom: 12,
+    backgroundColor: "transparent",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    color: "#0F172A",
   },
-
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    backgroundColor: "#f9fafb",
-    marginBottom: 12,
-    paddingRight: 10,
+    backgroundColor: "#F0FDFB",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#E0F2F1",
   },
-
   passwordInput: {
     flex: 1,
-    padding: 12,
+    backgroundColor: "transparent",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    color: "#0F172A",
   },
-
-  eye: {
-    fontSize: 12,
-    color: "#2563eb",
-    fontWeight: "600",
+  eyeButton: {
+    padding: 16,
   },
-
+  eyeText: {
+    fontSize: 20,
+  },
   button: {
-    backgroundColor: "#2563eb",
-    padding: 14,
-    borderRadius: 10,
+    backgroundColor: "#0D7377",
+    paddingVertical: 18,
+    borderRadius: 16,
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 8,
+    shadowColor: "#0D7377",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 8,
   },
-
   buttonDisabled: {
-    backgroundColor: "#9ca3af",
+    backgroundColor: "#94A3B8",
+    shadowOpacity: 0,
   },
-
   buttonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-
-  errorContainer: {
-    backgroundColor: "#fee2e2",
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-
-  errorText: {
-    color: "#dc2626",
-    fontSize: 12,
-    textAlign: "center",
-  },
-
-  footer: {
-    textAlign: "center",
-    color: "#9ca3af",
-    marginTop: 20,
-    fontSize: 12,
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });
